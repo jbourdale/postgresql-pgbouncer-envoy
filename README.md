@@ -90,8 +90,8 @@ flowchart TD
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
-   cd postgresql-rate-limiting
+   git clone https://github.com/jbourdale/postgresql-pgbouncer-envoy
+   cd postgresql-pgbouncer-envoy
    ```
 
 2. Start the services:
@@ -101,7 +101,7 @@ flowchart TD
 
 3. Access the monitoring dashboards:
    - Grafana: http://localhost:3001 (username: admin, password: admin)
-   - Prometheus: http://localhost:9090
+      - Go to dashboards, one should already be created 
 
 
 5. Observe the effects in Grafana:
