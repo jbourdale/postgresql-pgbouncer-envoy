@@ -4,4 +4,11 @@ descriptors:
     value: "*"
     rate_limit:
       unit: second
-      requests_per_unit: 15
+      requests_per_unit: 50
+
+  # Add a separate descriptor for connection establishment
+  - key: connection_establishment
+    value: "*"
+    rate_limit:
+      unit: second
+      requests_per_unit: 50

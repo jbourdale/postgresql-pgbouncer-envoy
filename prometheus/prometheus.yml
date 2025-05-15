@@ -10,6 +10,10 @@ scrape_configs:
   - job_name: 'dummy-client'
     static_configs:
       - targets: ['dummy-client:8000']
+
+  - job_name: 'direct-client'
+    static_configs:
+      - targets: ['direct-client:8000']
       
   - job_name: 'pgbouncer-exporter'
     static_configs:

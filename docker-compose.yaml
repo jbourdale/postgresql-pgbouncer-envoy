@@ -73,8 +73,26 @@ services:
       DB_USER: myuser
       DB_PASSWORD: mypass
       DB_NAME: mydb
+      CLIENT_NAME: pooled
+      POOL_MIN_SIZE: 40
+      POOL_MAX_SIZE: 40
     depends_on:
       - envoy
+
+  direct-client:
+    build: ./dummy-client
+    environment:
+      TPS: 10
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: myuser
+      DB_PASSWORD: mypass
+      DB_NAME: mydb
+      CLIENT_NAME: direct
+      POOL_MIN_SIZE: 40
+      POOL_MAX_SIZE: 40
+    depends_on:
+      - postgres
 
   prometheus:
     image: prom/prometheus:v2.45.0
@@ -120,13 +138,9 @@ services:
     image: prometheuscommunity/pgbouncer-exporter:v0.5.1
     ports:
       - "9127:9127"
-    environment:
-      - DATABASE_URL=postgres://myuser:mypass@pgbouncer:6432/pgbouncer?sslmode=disable
-      - PGBOUNCER_EXPORTER_CONNECT_TIMEOUT=10
-      - PGBOUNCER_EXPORTER_HOST=pgbouncer
-      - PGBOUNCER_EXPORTER_PORT=6432
-      - PGBOUNCER_EXPORTER_USER=myuser
-      - PGBOUNCER_EXPORTER_PASS=mypass
+    command:
+      - "--pgBouncer.connectionString=postgres://myuser:mypass@pgbouncer:6432/pgbouncer?sslmode=disable"  
+      - "--web.listen-address=:9127"
     depends_on:
       - pgbouncer
 
