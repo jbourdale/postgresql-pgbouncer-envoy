@@ -50,6 +50,11 @@ flowchart TD
         pgbouncer
         postgres
     end
+
+    subgraph clients
+        pooled_client
+        direct_client
+    end
 ```
 
 ## How It Works
