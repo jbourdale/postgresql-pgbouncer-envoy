@@ -641,8 +641,10 @@
               "type": "prometheus",
               "uid": "prometheus"
             },
-            "expr": "postgres_connection_pool_size{client=\"pooled\"}",
-            "legendFormat": "Pooled Client - Total Pool Size",
+            "editorMode": "code",
+            "expr": "postgres_connection_pool_size{}",
+            "legendFormat": "{{client}} - Total Pool Size",
+            "range": true,
             "refId": "A"
           },
           {
@@ -650,8 +652,10 @@
               "type": "prometheus",
               "uid": "prometheus"
             },
-            "expr": "postgres_connection_pool_used{client=\"pooled\"}",
-            "legendFormat": "Pooled Client - Used Connections",
+            "editorMode": "code",
+            "expr": "postgres_connection_pool_used{}",
+            "legendFormat": "{{client}} - Used Connections",
+            "range": true,
             "refId": "B"
           },
           {
@@ -659,12 +663,14 @@
               "type": "prometheus",
               "uid": "prometheus"
             },
-            "expr": "postgres_connection_pool_available{client=\"pooled\"}",
-            "legendFormat": "Pooled Client - Available Connections",
+            "editorMode": "code",
+            "expr": "postgres_connection_pool_available{}",
+            "legendFormat": "{{client}} - Available Connections",
+            "range": true,
             "refId": "C"
           }
         ],
-        "title": "Client Connection Pool Metrics",
+        "title": "Application side Connection Pool Metrics",
         "type": "timeseries"
       },
       {
@@ -913,5 +919,5 @@
     "timezone": "",
     "title": "PostgreSQL Monitoring",
     "uid": "postgres-dashboard",
-    "version": 21
+    "version": 23
   }
