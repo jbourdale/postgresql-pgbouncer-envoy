@@ -1,0 +1,7 @@
+domain: postgres
+descriptors:
+  - key: remote_address
+    value: "*"
+    rate_limit:
+      unit: second
+      requests_per_unit: 15
