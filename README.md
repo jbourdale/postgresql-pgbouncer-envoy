@@ -1,4 +1,4 @@
-# PostgreSQL Rate Limiting with Envoy Proxy
+# PostgreSQL Rate Limiting with Envoy Proxy And server-side connection pooling with pgbouncer
 
 ## Project Overview
 
