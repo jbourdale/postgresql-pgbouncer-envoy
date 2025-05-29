@@ -1,1 +1,1 @@
-"myuser" "mypass" 
+"pooled_user" "pooled_pass"

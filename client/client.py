@@ -26,8 +26,10 @@ QUERIES_RATE = Gauge(f'postgres_queries_rate', 'Current rate of PostgreSQL queri
 QUERY_LATENCY = Histogram(f'postgres_query_latency_seconds', 'PostgreSQL query latency in seconds', 
                           ['client'],
                           buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10])
-POOL_SIZE = Gauge('postgres_connection_pool_size', 'Size of the PostgreSQL connection pool', 
-                  ['client'])
+POOL_SIZE_MAX = Gauge('postgres_connection_pool_max_size', 'Maximum size of the PostgreSQL connection pool', 
+                      ['client'])
+POOL_SIZE_MIN = Gauge('postgres_connection_pool_min_size', 'Minimum size of the PostgreSQL connection pool', 
+                      ['client'])
 POOL_AVAILABLE = Gauge('postgres_connection_pool_available', 'Available connections in the PostgreSQL pool', 
                        ['client'])
 POOL_USED = Gauge('postgres_connection_pool_used', 'Used connections in the PostgreSQL pool', 
@@ -75,8 +77,9 @@ class PostgreSQLClient:
                 dbname=self.db_name
             )
             
-            # Update pool size metric
-            POOL_SIZE.labels(client=client_name).set(self._pool_max_size)
+            # Update pool size metrics
+            POOL_SIZE_MAX.labels(client=client_name).set(self._pool_max_size)
+            POOL_SIZE_MIN.labels(client=client_name).set(self._pool_min_size)
     
     @contextmanager
     def get_connection(self):
@@ -154,7 +157,7 @@ class PostgreSQLClient:
         """Main query execution loop"""
         print(f"Starting {client_name} client with {self.tps} TPS")
         print(f"Connecting to {self.db_host}:{self.db_port}/{self.db_name} as {self.db_user}")
-        print(f"Using connection pool with {self.pool_max_size} connections")
+        print(f"Using connection pool with {self.pool_min_size}-{self.pool_max_size} connections")
         
         while self.running and not self.shutdown_event.is_set():
             current_tps = self.tps

@@ -4,21 +4,23 @@ services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypass
-      POSTGRES_DB: mydb
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: toor
+      POSTGRES_DB: postgres
     ports:
       - "5432:5432"
+    volumes:
+      - ./postgresql:/docker-entrypoint-initdb.d
 
   pgbouncer:
     image: edoburu/pgbouncer:1.18.0
     ports:
       - "6432:6432"
     environment:
-      DB_USER: myuser
-      DB_PASSWORD: mypass
+      DB_USER: pooled_user
+      DB_PASSWORD: pooled_pass
       DB_HOST: postgres
-      DB_NAME: mydb
+      DB_NAME: pooled_db
       DB_PORT: 5432
     volumes:
       - ./pgbouncer:/etc/pgbouncer
@@ -70,9 +72,9 @@ services:
       TPS: 10
       DB_HOST: envoy
       DB_PORT: 6433
-      DB_USER: myuser
-      DB_PASSWORD: mypass
-      DB_NAME: mydb
+      DB_USER: pooled_user
+      DB_PASSWORD: pooled_pass
+      DB_NAME: pooled_db
       CLIENT_NAME: pooled
       POOL_MIN_SIZE: 40
       POOL_MAX_SIZE: 40
@@ -80,6 +82,8 @@ services:
       - "8080:8080"
     depends_on:
       - envoy
+      - pgbouncer
+      - postgres
 
   direct-client:
     build: ./client
@@ -87,9 +91,9 @@ services:
       TPS: 10
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_USER: myuser
-      DB_PASSWORD: mypass
-      DB_NAME: mydb
+      DB_USER: direct_user
+      DB_PASSWORD: direct_pass
+      DB_NAME: direct_db
       CLIENT_NAME: direct
       POOL_MIN_SIZE: 40
       POOL_MAX_SIZE: 40
@@ -139,12 +143,22 @@ services:
     depends_on:
       - prometheus
 
-  postgres-exporter:
+  # Separate exporters for each database
+  postgres-exporter-pooled:
     image: prometheuscommunity/postgres-exporter:v0.14.0
     ports:
       - "9187:9187"
     environment:
-      - DATA_SOURCE_NAME=postgresql://myuser:mypass@postgres:5432/mydb?sslmode=disable
+      - DATA_SOURCE_NAME=postgresql://pooled_user:pooled_pass@postgres:5432/pooled_db?sslmode=disable
+    depends_on:
+      - postgres
+
+  postgres-exporter-direct:
+    image: prometheuscommunity/postgres-exporter:v0.14.0
+    ports:
+      - "9188:9187"
+    environment:
+      - DATA_SOURCE_NAME=postgresql://direct_user:direct_pass@postgres:5432/direct_db?sslmode=disable
     depends_on:
       - postgres
 
@@ -153,7 +167,7 @@ services:
     ports:
       - "9127:9127"
     command:
-      - "--pgBouncer.connectionString=postgres://myuser:mypass@pgbouncer:6432/pgbouncer?sslmode=disable"  
+      - "--pgBouncer.connectionString=postgres://pooled_user:pooled_pass@pgbouncer:6432/pgbouncer?sslmode=disable"  
       - "--web.listen-address=:9127"
     depends_on:
       - pgbouncer
