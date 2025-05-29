@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostgreSQL Client Controller</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+
+        .health-summary {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .client-section {
+            margin-bottom: 3rem;
+        }
+
+        .client-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding: 1rem 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .client-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .client-title h2 {
+            font-size: 1.8rem;
+            color: #2d3748;
+            margin: 0;
+        }
+
+        .client-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .client-badge.pooled {
+            background: #e6fffa;
+            color: #234e52;
+            border: 1px solid #81e6d9;
+        }
+
+        .client-badge.direct {
+            background: #fef5e7;
+            color: #744210;
+            border: 1px solid #f6e05e;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e1e5e9;
+        }
+
+        .card h3 {
+            color: #2d3748;
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .status-item {
+            background: #f7fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            text-align: center;
+        }
+
+        .status-item .label {
+            font-size: 0.75rem;
+            color: #718096;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .status-item .value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .message.success {
+            background: #f0fff4;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .message.error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #feb2b2;
+        }
+
+        .message.info {
+            background: #ebf8ff;
+            color: #2a4365;
+            border: 1px solid #90cdf4;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .health-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .health-status.healthy {
+            background: #f0fff4;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .health-status.unhealthy {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #feb2b2;
+        }
+
+        .monitoring-links {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
+        }
+
+        .monitoring-links h2 {
+            color: #2d3748;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .links-grid {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .status-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .health-summary {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .client-header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>PostgreSQL Client Controller</h1>
+            <p>Monitor and configure both pooled and direct PostgreSQL clients</p>
+            <div class="health-summary">
+                <span id="health-status-pooled" class="health-status">
+                    <span id="health-icon-pooled">⏳</span>
+                    <span id="health-text-pooled">Pooled: Checking...</span>
+                </span>
+                <span id="health-status-direct" class="health-status">
+                    <span id="health-icon-direct">⏳</span>
+                    <span id="health-text-direct">Direct: Checking...</span>
+                </span>
+            </div>
+        </div>
+
+        <div id="message-container"></div>
+
+        <!-- Pooled Client Section -->
+        <div class="client-section">
+            <div class="client-header">
+                <div class="client-title">
+                    <h2>🏊 Pooled Client</h2>
+                    <span class="client-badge pooled">Via Envoy/PgBouncer</span>
+                </div>
+                <button class="btn btn-secondary btn-small" onclick="refreshConfig('pooled')">
+                    🔄 Refresh
+                </button>
+            </div>
+
+            <div class="grid">
+                <!-- Current Configuration -->
+                <div class="card">
+                    <h3>📊 Current Configuration</h3>
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <div class="label">TPS</div>
+                            <div class="value" id="current-tps-pooled">-</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="label">Pool Min</div>
+                            <div class="value" id="current-pool-min-pooled">-</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="label">Pool Max</div>
+                            <div class="value" id="current-pool-max-pooled">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TPS Configuration -->
+                <div class="card">
+                    <h3>⚡ Configure TPS</h3>
+                    <form id="tps-form-pooled" onsubmit="updateTPS(event, 'pooled')">
+                        <div class="form-group">
+                            <label for="tps-input-pooled">Transactions Per Second</label>
+                            <input 
+                                type="number" 
+                                id="tps-input-pooled" 
+                                min="1" 
+                                max="10000" 
+                                step="1" 
+                                placeholder="Enter TPS value"
+                                required
+                            >
+                        </div>
+                        <button type="submit" class="btn">
+                            🚀 Update TPS
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Pool Configuration -->
+                <div class="card">
+                    <h3>🔧 Configure Pool Size</h3>
+                    <form id="pool-form-pooled" onsubmit="updatePool(event, 'pooled')">
+                        <div class="form-group">
+                            <label for="pool-min-input-pooled">Minimum Pool Size</label>
+                            <input 
+                                type="number" 
+                                id="pool-min-input-pooled" 
+                                min="1" 
+                                max="1000" 
+                                step="1" 
+                                placeholder="Min connections"
+                                required
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="pool-max-input-pooled">Maximum Pool Size</label>
+                            <input 
+                                type="number" 
+                                id="pool-max-input-pooled" 
+                                min="1" 
+                                max="1000" 
+                                step="1" 
+                                placeholder="Max connections"
+                                required
+                            >
+                        </div>
+                        <button type="submit" class="btn">
+                            🔧 Update Pool
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direct Client Section -->
+        <div class="client-section">
+            <div class="client-header">
+                <div class="client-title">
+                    <h2>🎯 Direct Client</h2>
+                    <span class="client-badge direct">Direct Connection</span>
+                </div>
+                <button class="btn btn-secondary btn-small" onclick="refreshConfig('direct')">
+                    🔄 Refresh
+                </button>
+            </div>
+
+            <div class="grid">
+                <!-- Current Configuration -->
+                <div class="card">
+                    <h3>📊 Current Configuration</h3>
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <div class="label">TPS</div>
+                            <div class="value" id="current-tps-direct">-</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="label">Pool Min</div>
+                            <div class="value" id="current-pool-min-direct">-</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="label">Pool Max</div>
+                            <div class="value" id="current-pool-max-direct">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TPS Configuration -->
+                <div class="card">
+                    <h3>⚡ Configure TPS</h3>
+                    <form id="tps-form-direct" onsubmit="updateTPS(event, 'direct')">
+                        <div class="form-group">
+                            <label for="tps-input-direct">Transactions Per Second</label>
+                            <input 
+                                type="number" 
+                                id="tps-input-direct" 
+                                min="1" 
+                                max="10000" 
+                                step="1" 
+                                placeholder="Enter TPS value"
+                                required
+                            >
+                        </div>
+                        <button type="submit" class="btn">
+                            🚀 Update TPS
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Pool Configuration -->
+                <div class="card">
+                    <h3>🔧 Configure Pool Size</h3>
+                    <form id="pool-form-direct" onsubmit="updatePool(event, 'direct')">
+                        <div class="form-group">
+                            <label for="pool-min-input-direct">Minimum Pool Size</label>
+                            <input 
+                                type="number" 
+                                id="pool-min-input-direct" 
+                                min="1" 
+                                max="1000" 
+                                step="1" 
+                                placeholder="Min connections"
+                                required
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="pool-max-input-direct">Maximum Pool Size</label>
+                            <input 
+                                type="number" 
+                                id="pool-max-input-direct" 
+                                min="1" 
+                                max="1000" 
+                                step="1" 
+                                placeholder="Max connections"
+                                required
+                            >
+                        </div>
+                        <button type="submit" class="btn">
+                            🔧 Update Pool
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monitoring Links -->
+        <div class="monitoring-links">
+            <h2>🔗 Monitoring Links</h2>
+            <div class="links-grid">
+                <a href="http://localhost:8000" target="_blank" class="btn">
+                    📈 Pooled Client Metrics
+                </a>
+                <a href="http://localhost:8001" target="_blank" class="btn">
+                    📈 Direct Client Metrics
+                </a>
+                <a href="http://localhost:3000" target="_blank" class="btn btn-secondary">
+                    📊 Grafana Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_ENDPOINTS = {
+            'pooled': 'http://localhost:8080',
+            'direct': 'http://localhost:8079'
+        };
+        
+        // Show message to user
+        function showMessage(message, type = 'info') {
+            const container = document.getElementById('message-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = message;
+            
+            container.innerHTML = '';
+            container.appendChild(messageDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.parentNode.removeChild(messageDiv);
+                }
+            }, 5000);
+        }
+
+        // Set loading state for forms
+        function setLoading(formId, loading) {
+            const form = document.getElementById(formId);
+            if (loading) {
+                form.classList.add('loading');
+            } else {
+                form.classList.remove('loading');
+            }
+        }
+
+        // Check health status for a specific client
+        async function checkHealth(clientType) {
+            try {
+                const response = await fetch(`${API_ENDPOINTS[clientType]}/health`);
+                const data = await response.json();
+                
+                const statusElement = document.getElementById(`health-status-${clientType}`);
+                const iconElement = document.getElementById(`health-icon-${clientType}`);
+                const textElement = document.getElementById(`health-text-${clientType}`);
+                
+                if (response.ok && data.status === 'healthy') {
+                    statusElement.className = 'health-status healthy';
+                    iconElement.textContent = '✅';
+                    textElement.textContent = `${clientType.charAt(0).toUpperCase() + clientType.slice(1)}: Healthy`;
+                } else {
+                    throw new Error('Service unhealthy');
+                }
+            } catch (error) {
+                const statusElement = document.getElementById(`health-status-${clientType}`);
+                const iconElement = document.getElementById(`health-icon-${clientType}`);
+                const textElement = document.getElementById(`health-text-${clientType}`);
+                
+                statusElement.className = 'health-status unhealthy';
+                iconElement.textContent = '❌';
+                textElement.textContent = `${clientType.charAt(0).toUpperCase() + clientType.slice(1)}: Unhealthy`;
+            }
+        }
+
+        // Check health for all clients
+        async function checkAllHealth() {
+            await Promise.all([
+                checkHealth('pooled'),
+                checkHealth('direct')
+            ]);
+        }
+
+        // Fetch and display current configuration for a specific client
+        async function refreshConfig(clientType) {
+            try {
+                const response = await fetch(`${API_ENDPOINTS[clientType]}/config`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const config = await response.json();
+                
+                document.getElementById(`current-tps-${clientType}`).textContent = config.tps;
+                document.getElementById(`current-pool-min-${clientType}`).textContent = config.pool_min_size;
+                document.getElementById(`current-pool-max-${clientType}`).textContent = config.pool_max_size;
+                
+                // Update form inputs with current values
+                document.getElementById(`tps-input-${clientType}`).value = config.tps;
+                document.getElementById(`pool-min-input-${clientType}`).value = config.pool_min_size;
+                document.getElementById(`pool-max-input-${clientType}`).value = config.pool_max_size;
+                
+                showMessage(`${clientType.charAt(0).toUpperCase() + clientType.slice(1)} configuration refreshed successfully`, 'success');
+            } catch (error) {
+                console.error(`Error fetching ${clientType} config:`, error);
+                showMessage(`Failed to fetch ${clientType} configuration: ${error.message}`, 'error');
+            }
+        }
+
+        // Refresh all configurations
+        async function refreshAllConfigs() {
+            await Promise.all([
+                refreshConfig('pooled'),
+                refreshConfig('direct')
+            ]);
+        }
+
+        // Update TPS for a specific client
+        async function updateTPS(event, clientType) {
+            event.preventDefault();
+            setLoading(`tps-form-${clientType}`, true);
+            
+            try {
+                const tps = parseInt(document.getElementById(`tps-input-${clientType}`).value);
+                
+                const response = await fetch(`${API_ENDPOINTS[clientType]}/config/tps`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ tps: tps })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                showMessage(`${clientType.charAt(0).toUpperCase() + clientType.slice(1)} TPS updated: ${result.old_tps} → ${result.new_tps}`, 'success');
+                
+                // Refresh configuration display
+                setTimeout(() => refreshConfig(clientType), 500);
+                
+            } catch (error) {
+                console.error(`Error updating ${clientType} TPS:`, error);
+                showMessage(`Failed to update ${clientType} TPS: ${error.message}`, 'error');
+            } finally {
+                setLoading(`tps-form-${clientType}`, false);
+            }
+        }
+
+        // Update Pool Size for a specific client
+        async function updatePool(event, clientType) {
+            event.preventDefault();
+            setLoading(`pool-form-${clientType}`, true);
+            
+            try {
+                const minSize = parseInt(document.getElementById(`pool-min-input-${clientType}`).value);
+                const maxSize = parseInt(document.getElementById(`pool-max-input-${clientType}`).value);
+                
+                if (minSize > maxSize) {
+                    throw new Error('Minimum pool size cannot be greater than maximum pool size');
+                }
+                
+                const response = await fetch(`${API_ENDPOINTS[clientType]}/config/pool`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        min_size: minSize, 
+                        max_size: maxSize 
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                showMessage(`${clientType.charAt(0).toUpperCase() + clientType.slice(1)}: ${result.message}`, 'success');
+                
+                // Refresh configuration display
+                setTimeout(() => refreshConfig(clientType), 500);
+                
+            } catch (error) {
+                console.error(`Error updating ${clientType} pool:`, error);
+                showMessage(`Failed to update ${clientType} pool size: ${error.message}`, 'error');
+            } finally {
+                setLoading(`pool-form-${clientType}`, false);
+            }
+        }
+
+        // Initialize the page
+        async function initialize() {
+            await checkAllHealth();
+            await refreshAllConfigs();
+            
+            // Set up periodic health checks
+            setInterval(checkAllHealth, 10000); // Every 10 seconds
+            
+            // Set up periodic config refresh
+            setInterval(refreshAllConfigs, 30000); // Every 30 seconds
+        }
+
+        // Start when page loads
+        document.addEventListener('DOMContentLoaded', initialize);
+    </script>
+</body>
+</html>
+
+</html>

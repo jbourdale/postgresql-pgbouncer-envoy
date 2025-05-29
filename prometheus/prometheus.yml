@@ -7,9 +7,9 @@ scrape_configs:
     static_configs:
       - targets: ['postgres-exporter:9187']
 
-  - job_name: 'dummy-client'
+  - job_name: 'pooled-client'
     static_configs:
-      - targets: ['dummy-client:8000']
+      - targets: ['pooled-client:8000']
 
   - job_name: 'direct-client'
     static_configs:

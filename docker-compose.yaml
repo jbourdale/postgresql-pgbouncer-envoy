@@ -64,8 +64,8 @@ services:
       timeout: 2s
       retries: 3
 
-  dummy-client:
-    build: ./dummy-client
+  pooled-client:
+    build: ./client
     environment:
       TPS: 10
       DB_HOST: envoy
@@ -76,11 +76,13 @@ services:
       CLIENT_NAME: pooled
       POOL_MIN_SIZE: 40
       POOL_MAX_SIZE: 40
+    ports:
+      - "8080:8080"
     depends_on:
       - envoy
 
   direct-client:
-    build: ./dummy-client
+    build: ./client
     environment:
       TPS: 10
       DB_HOST: postgres
@@ -91,8 +93,20 @@ services:
       CLIENT_NAME: direct
       POOL_MIN_SIZE: 40
       POOL_MAX_SIZE: 40
+    ports:
+      - "8079:8080"
     depends_on:
       - postgres
+
+  # UI service for controlling the PostgreSQL clients
+  ui:
+    build: ./ui
+    ports:
+      - "3000:80"
+    depends_on:
+      - pooled-client
+      - direct-client
+    stop_grace_period: 1s
 
   prometheus:
     image: prom/prometheus:v2.45.0
