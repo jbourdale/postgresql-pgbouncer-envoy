@@ -56,7 +56,7 @@ services:
       - "6433:6433"
       - "9901:9901"
     volumes:
-      - ./envoy.yaml:/etc/envoy/envoy.yaml
+      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml
     depends_on:
       - pgbouncer
       - ratelimit
